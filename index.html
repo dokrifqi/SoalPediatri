@@ -2292,23 +2292,23 @@ if (typeof module !== 'undefined' && module.exports) {
 <script>
 // ===== GAME STATE =====
 const BOSSES = [
-  { name: "Shadow Serpent", icon: "🐍", difficulty: 1 },
-  { name: "Crimson Golem", icon: "🔴", difficulty: 2 },
-  { name: "Frost Wraith", icon: "❄️", difficulty: 2 },
-  { name: "Inferno Dragon", icon: "🔥", difficulty: 2 },
-  { name: "Phantom Reaper", icon: "👻", difficulty: 3 },
-  { name: "Storm Titan", icon: "⚡", difficulty: 3 },
-  { name: "Obsidian Knight", icon: "🛡️", difficulty: 3 },
-  { name: "Void Abomination", icon: "🌌", difficulty: 3 },
-  { name: "Chaos Hydra", icon: "🐉", difficulty: 4 },
-  { name: "Apocalypse Demon", icon: "💀", difficulty: 4 }
+  { name: "Nutrisi & Gizi",       icon: "🥗", difficulty: 1, categories: ["Nutrisi & Gizi"],              soalCount: 29, desc: "29 soal • Gizi buruk, MPASI, ADB, vitamin" },
+  { name: "Infeksi & Imunologi",  icon: "🦠", difficulty: 1, categories: ["Infeksi & Imunologi"],         soalCount: 25, desc: "25 soal • Dengue, TB, tifoid, alergi" },
+  { name: "Neurologi",            icon: "🧠", difficulty: 2, categories: ["Neurologi"],                   soalCount: 24, desc: "24 soal • Kejang, epilepsi, miopati" },
+  { name: "Neonatologi",          icon: "👶", difficulty: 2, categories: ["Neonatologi"],                 soalCount: 22, desc: "22 soal • Bayi baru lahir, ikterus, prematur" },
+  { name: "Kardiologi",           icon: "❤️", difficulty: 2, categories: ["Kardiologi"],                  soalCount: 16, desc: "16 soal • PJB, VSD, ASD, TOF" },
+  { name: "Respirologi",          icon: "🫁", difficulty: 3, categories: ["Respirologi"],                 soalCount: 12, desc: "12 soal • Pneumonia, asma, croup, pertusis" },
+  { name: "Hematologi",           icon: "🩸", difficulty: 3, categories: ["Hematologi"],                  soalCount: 11, desc: "11 soal • Anemia, leukemia, koagulasi" },
+  { name: "Nefrologi",            icon: "🫘", difficulty: 3, categories: ["Nefrologi"],                   soalCount: 11, desc: "11 soal • ISK, GGA, sindrom nefrotik" },
+  { name: "Endokrin & UGD",       icon: "⚗️", difficulty: 4, categories: ["Endokrin","UGD & Kegawatan"], soalCount: 18, desc: "18 soal • DM, anafilaksis, syok, kegawatan" },
+  { name: "Gastro & Lainnya",     icon: "🏥", difficulty: 4, categories: ["Gastroenterologi","Imunisasi","Tumbuh Kembang","Genetik & Kongenital","Fisiologi"], soalCount: 15, desc: "15 soal • Diare, hepatitis, imunisasi, tumbuh kembang" }
 ];
 
 const FINAL_BOSS = {
-  name: "The Eternal Guardian",
+  name: "DEWA PEDIATRI",
   icon: "👑",
   difficulty: 5,
-  description: "Pertarungan terakhir melawan penguasa tertinggi!",
+  description: "Semua kategori! Pertarungan penentu PPDS!",
   questions: 21
 };
 
@@ -2467,8 +2467,8 @@ function renderBossList() {
     html += `
       <div class="boss-item ${status}" onclick="loadBoss(${i})">
         <div style="font-size: 2em;">${boss.icon}</div>
-        <div class="boss-number">Boss ${i + 1}</div>
-        <div class="boss-name">${isCompleted ? '✓' : ''}</div>
+        <div class="boss-number" style="font-size:0.7em; font-weight:bold;">${boss.name}</div>
+        <div class="boss-name" style="font-size:0.65em; color:#94a3b8;">${isCompleted ? '✅ Selesai' : boss.soalCount + ' soal'}</div>
       </div>
     `;
   });
@@ -2526,11 +2526,13 @@ function loadBoss(bossIndex) {
   updateBossHP();
   
   const title = `${boss.icon} ${boss.name}`;
-  const desc = `Jawab 10 soal dengan benar untuk mengalahkan boss ini!`;
+  const bossPool = allSoal.filter(s => boss.categories.includes(s.category || 'Umum'));
+  const remaining = bossPool.filter(s => !gameState.correctSoal.includes(s.soalNo)).length;
+  const desc = `<strong style="color:#f59e0b">${boss.desc}</strong><br><span style="color:#94a3b8; font-size:0.9em">Soal belum dikerjakan: ${remaining}/${boss.soalCount}</span>`;
   
   document.getElementById('bossArenaTitle').innerHTML = title;
   document.getElementById('bossArenaDesc').innerHTML = desc;
-  document.getElementById('bossName').innerHTML = title;
+  document.getElementById('bossName').innerHTML = `${boss.icon} ${boss.name}`;
   document.getElementById('bossLevel').innerHTML = boss.difficulty;
   document.getElementById('playerName').innerHTML = CLASSES[gameState.class].name;
   document.getElementById('playerNameDisplay').innerHTML = `📝 Peserta: <strong>${gameState.playerName}</strong>`;
@@ -2567,7 +2569,7 @@ function loadFinalBoss() {
   const title = `${boss.icon} ${boss.name}`;
   document.getElementById('bossArenaTitle').innerHTML = title;
   document.getElementById('bossArenaDesc').innerHTML = `<span style="color: #ef4444; font-weight: bold;">PERTARUNGAN FINAL DIMULAI!</span><br>Jawab semua soal dengan BENAR SEMUA untuk menaklukkan The Eternal Guardian!`;
-  document.getElementById('bossName').innerHTML = title;
+  document.getElementById('bossName').innerHTML = `${boss.icon} ${boss.name}`;
   document.getElementById('bossLevel').innerHTML = boss.difficulty;
   document.getElementById('playerName').innerHTML = CLASSES[gameState.class].name;
   document.getElementById('playerNameDisplay').innerHTML = `📝 Peserta: <strong>${gameState.playerName}</strong>`;
@@ -2612,16 +2614,25 @@ function loadBossSoal() {
     return;
   }
   
-  // Filter: hapus soal yang sudah dijawab benar sebelumnya
-  const availableSoal = soalPool.filter(s => !gameState.correctSoal.includes(s.soalNo));
-  
-  // Jika semua soal sudah dijawab benar, reset list
-  if (availableSoal.length === 0) {
-    gameState.correctSoal = [];
-    const availableSoal = soalPool;
+  // Filter by boss category jika sedang di boss tertentu
+  let bossFilteredPool = soalPool;
+  if (!gameState.isFinalBoss && gameState.currentBoss >= 0 && gameState.currentBoss < BOSSES.length) {
+    const bossCategories = BOSSES[gameState.currentBoss].categories;
+    bossFilteredPool = allSoal.filter(s => bossCategories.includes(s.category || 'Umum'));
+    if (bossFilteredPool.length === 0) bossFilteredPool = soalPool;
   }
   
-  const shuffled = shuffleArray(availableSoal);
+  // Filter: hapus soal yang sudah dijawab benar sebelumnya (per boss)
+  const availableSoal = bossFilteredPool.filter(s => !gameState.correctSoal.includes(s.soalNo));
+  
+  // Jika semua soal sudah dijawab benar, reset list
+  let finalSoalPool = availableSoal;
+  if (availableSoal.length === 0) {
+    gameState.correctSoal = [];
+    finalSoalPool = soalPool;
+  }
+  
+  const shuffled = shuffleArray(finalSoalPool);
   gameState.soal = shuffled.slice(0, Math.min(10, shuffled.length));
   
   // Set boss HP (awal pertarungan atau per ronde)
@@ -2909,9 +2920,8 @@ function showBattleVictory() {
       <h2 style="color: #10b981; font-size: 2em;">BOSS DIKALAHKAN!</h2>
       <div class="score-display" style="color: #10b981;">10 / 10 Benar!</div>
       <div class="battle-summary">
-        <div class="summary-line">✓ Boss ${gameState.currentBoss + 1}: ${bossName}</div>
-        <div class="summary-line">✓ Semua jawaban benar!</div>
-        <div class="summary-line">✓ Boss dikalahkan tanpa cedera!</div>
+        <div class="summary-line">✓ Kategori: ${bossName} ${BOSSES[gameState.currentBoss].icon}</div>
+        <div class="summary-line" style="color:#10b981;">✓ Boss dikalahkan!</div>
         <div class="summary-line" style="color: #60a5fa; font-weight: bold;">❤️ HP Pemain Tersisa: ${gameState.playerHP}/${gameState.playerMaxHP}</div>
         <div class="summary-line" style="color: #f59e0b; font-weight: bold;">🗡️ Boss HP: ${gameState.bossHP}/${gameState.bossMaxHP}</div>
         <div class="summary-line" style="color: #10b981;">✓ Soal yang sudah benar: ${gameState.correctSoal.length} soal</div>
@@ -2971,7 +2981,7 @@ function showBattlePartialDamage(correct, wrong) {
 
 // ===== NEXT BOSS ROUND =====
 function nextBossRound() {
-  // Reload soal untuk boss yang sama
+  // Reload soal untuk boss yang sama (soal benar tetap difilter)
   loadBossSoal();
 }
 
