@@ -2555,6 +2555,7 @@ let gameState = {
   class: null,
   currentBoss: 0,
   isFinalBoss: false,
+  playerName: '',
   playerMaxHP: 0,
   playerHP: 0,
   playerDamage: 0,
@@ -2572,13 +2573,14 @@ let gameState = {
   bossDefeated: [],
   questionsPerBoss: 10,
   allAnswered: false,
-  selectedCategories: []
+  selectedCategories: [],
+  correctSoal: [],
+  currentBattleResult: null
 };
 
 // ===== CLASS SELECTION =====
 function selectClass(classType) {
-  gameState.classType = classType;
-  // Registration is already visible, just focus on name input
+  gameState.class = classType;  // fix: was gameState.classType
   document.getElementById('playerName').focus();
 }
 
@@ -2589,9 +2591,8 @@ function renderBossList() {
     const isCompleted = gameState.bossDefeated.includes(i);
     const isActive = gameState.currentBoss === i && !gameState.isFinalBoss;
     const status = isCompleted ? 'completed' : (isActive ? 'active' : '');
-    
     html += `
-      <div class="boss-item ${status}" onclick="selectBoss(${i})">
+      <div class="boss-item ${status}" onclick="pilihBoss(${i})" style="cursor:pointer;">
         <div style="font-size: 2em;">${boss.icon}</div>
         <div class="boss-number" style="font-size:0.7em; font-weight:bold;">${boss.name}</div>
         <div class="boss-name" style="font-size:0.65em; color:#94a3b8;">${isCompleted ? '✅ Selesai' : boss.soalCount + ' soal'}</div>
@@ -2626,61 +2627,59 @@ function renderBossList() {
 }
 
 
-// ===== SELECT BOSS (show button) =====
-function selectBoss(bossIndex) {
-  loadBoss(bossIndex);
-  // Scroll to button
-  setTimeout(() => {
-    const btn = document.getElementById('startBossBtn');
-    if (btn && btn.style.display !== 'none') {
-      btn.scrollIntoView({ behavior: 'smooth', block: 'center' });
-    }
-  }, 100);
-}
 
-// ===== LOAD BOSS =====
-function loadBoss(bossIndex) {
-  if (bossIndex >= BOSSES.length) {
-    gameState.isFinalBoss = true;
-    loadFinalBoss();
-    return;
-  }
 
-  const boss = BOSSES[bossIndex];
-  gameState.currentBoss = bossIndex;
+
+// ===== PILIH BOSS (onclick dari boss card) =====
+function pilihBoss(idx) {
+  if (idx < 0 || idx >= BOSSES.length) return;
+  const boss = BOSSES[idx];
+
+  // Update state
+  gameState.currentBoss = idx;
   gameState.isFinalBoss = false;
-  gameState.bossMaxHP = 0; // Will be set in loadBossSoal
-  gameState.questionsPerBoss = boss.soalCount;
-  gameState.playerLevel = bossIndex + 1;
+  gameState.playerLevel = idx + 1;
   gameState.questionsAnswered = 0;
   gameState.questionsCorrect = 0;
+  gameState.bossMaxHP = 0;
+
+  // Update UI header (guard jika class belum dipilih)
+  const classInfo = gameState.class ? CLASSES[gameState.class] : null;
+  document.getElementById('bossName').innerHTML = boss.icon + ' ' + boss.name;
+  document.getElementById('bossLevel').innerHTML = boss.difficulty;
+  if (classInfo) {
+    document.getElementById('playerName').innerHTML = classInfo.name;
+    document.getElementById('difficultyLabel').innerHTML = classInfo.difficulty;
+    document.getElementById('maxMistakes').innerHTML = gameState.playerMaxHP;
+  }
+  document.getElementById('playerNameDisplay').innerHTML = '📝 Peserta: <strong>' + (gameState.playerName || '-') + '</strong>';
+  document.getElementById('playerLevel').innerHTML = gameState.playerLevel;
+
+  // Update boss arena info
+  const pool = allSoal.filter(function(s){
+    return boss.categories.indexOf(s.category || 'Umum') >= 0;
+  });
+  const done = gameState.correctSoal || [];
+  const remaining = pool.filter(function(s){ return done.indexOf(s.soalNo) < 0; }).length;
+
+  document.getElementById('bossArenaTitle').innerHTML = boss.icon + ' ' + boss.name;
+  document.getElementById('bossArenaDesc').innerHTML =
+    '<strong style="color:#f59e0b">' + boss.desc + '</strong><br>' +
+    '<span style="color:#94a3b8; font-size:0.9em">Total: ' + pool.length + ' soal | Belum dijawab: ' + remaining + '</span>';
+
+  // Tampilkan tombol SERANG, sembunyikan soal lama
+  document.getElementById('startBossBtn').style.display = 'block';
+  document.getElementById('startTryOutBtn').style.display = 'none';
+  document.getElementById('questionContainer').innerHTML = '';
 
   updatePlayerHP();
   updateBossHP();
-
-  // Update boss info display
-  const bossPool = allSoal.filter(s => boss.categories.includes(s.category || 'Umum'));
-  const remaining = bossPool.filter(s => !gameState.correctSoal.includes(s.soalNo)).length;
-
-  document.getElementById('bossArenaTitle').innerHTML = `${boss.icon} ${boss.name}`;
-  document.getElementById('bossArenaDesc').innerHTML =
-    `<strong style="color:#f59e0b">${boss.desc}</strong><br>
-     <span style="color:#94a3b8; font-size:0.9em">Total: ${bossPool.length} soal | Belum dijawab: ${remaining}</span>`;
-  document.getElementById('bossName').innerHTML = `${boss.icon} ${boss.name}`;
-  document.getElementById('bossLevel').innerHTML = boss.difficulty;
-  document.getElementById('playerName').innerHTML = CLASSES[gameState.class].name;
-  document.getElementById('playerNameDisplay').innerHTML = `📝 Peserta: <strong>${gameState.playerName}</strong>`;
-  document.getElementById('difficultyLabel').innerHTML = CLASSES[gameState.class].difficulty;
-  document.getElementById('maxMistakes').innerHTML = gameState.playerMaxHP;
-  document.getElementById('playerLevel').innerHTML = gameState.playerLevel;
-
-  // Tampilkan tombol SERANG di dalam boss arena
-  document.getElementById('startBossBtn').style.display = 'block';
-  document.getElementById('startTryOutBtn').style.display = 'none';
-  // Bersihkan soal sebelumnya
-  document.getElementById('questionContainer').innerHTML = '';
-
   renderBossList();
+}
+
+// ===== LOAD BOSS (alias, dipanggil saat init) =====
+function loadBoss(idx) {
+  pilihBoss(idx);
 }
 
 // ===== LOAD FINAL BOSS =====
@@ -2809,6 +2808,7 @@ function selectDokter(dokterType, element) {
   
   // Store selection
   gameState.selectedDokter = dokterType;
+  gameState.class = dokterType;  // ensure gameState.class is also set
   
   // Show confirmation
   const dokterNames = {
@@ -2858,6 +2858,8 @@ function startGameWithPlayer() {
   gameState.playerLevel = 1;
   gameState.soal = [];
   gameState.currentQuestion = 0;
+  gameState.correctSoal = [];
+  gameState.currentBattleResult = null;
   
   // Hide registration, show game
   document.getElementById('playerRegistration').style.display = 'none';
