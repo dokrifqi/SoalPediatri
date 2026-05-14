@@ -2611,8 +2611,24 @@ function loadBossSoal() {
     alert('⚠️ Soal di kategori ini kurang dari 5. Silakan pilih kategori lain atau Semua.');
     return;
   }
-  const shuffled = shuffleArray(soalPool);
+  
+  // Filter: hapus soal yang sudah dijawab benar sebelumnya
+  const availableSoal = soalPool.filter(s => !gameState.correctSoal.includes(s.soalNo));
+  
+  // Jika semua soal sudah dijawab benar, reset list
+  if (availableSoal.length === 0) {
+    gameState.correctSoal = [];
+    const availableSoal = soalPool;
+  }
+  
+  const shuffled = shuffleArray(availableSoal);
   gameState.soal = shuffled.slice(0, Math.min(10, shuffled.length));
+  
+  // Set boss HP (awal pertarungan atau per ronde)
+  if (!gameState.bossMaxHP) {
+    gameState.bossMaxHP = gameState.soal.length; // Misal: 10 soal = 10 HP
+  }
+  gameState.bossHP = gameState.soal.length; // Reset HP per ronde
   gameState.currentQuestion = 0;
   gameState.answers = new Array(gameState.soal.length);
   gameState.allAnswered = false;
@@ -2843,9 +2859,31 @@ function calculateBattleResult() {
     return;
   }
   
-  // Check if boss defeated
-  if (correct === gameState.soal.length) {
-    // Victory! Semua benar
+  // Kurangi HP boss sesuai damage yang diberikan
+  gameState.bossHP -= wrong;
+  if (gameState.bossHP < 0) gameState.bossHP = 0;
+  
+  // Track soal yang dijawab benar
+  gameState.soal.forEach((soal, idx) => {
+    if (gameState.answers[idx] === soal.answer && !gameState.correctSoal.includes(soal.soalNo)) {
+      gameState.correctSoal.push(soal.soalNo);
+    }
+  });
+  
+  // Store battle result untuk analisis
+  gameState.currentBattleResult = {
+    correct: correct,
+    wrong: wrong,
+    soal: gameState.soal,
+    answers: gameState.answers
+  };
+  
+  // Check if boss HP habis (boss defeated)
+  if (gameState.bossHP <= 0) {
+    // Victory! Boss dikalahkan
+    showBattleVictory();
+  } else if (correct === gameState.soal.length) {
+    // Semua soal di ronde ini benar, tapi bos masih ada
     showBattleVictory();
   } else {
     // Partial damage - continue fighting
@@ -2874,7 +2912,9 @@ function showBattleVictory() {
         <div class="summary-line">✓ Boss ${gameState.currentBoss + 1}: ${bossName}</div>
         <div class="summary-line">✓ Semua jawaban benar!</div>
         <div class="summary-line">✓ Boss dikalahkan tanpa cedera!</div>
-        <div class="summary-line" style="color: #60a5fa; font-weight: bold;">❤️ HP Tersisa: ${gameState.playerHP}/${gameState.playerMaxHP}</div>
+        <div class="summary-line" style="color: #60a5fa; font-weight: bold;">❤️ HP Pemain Tersisa: ${gameState.playerHP}/${gameState.playerMaxHP}</div>
+        <div class="summary-line" style="color: #f59e0b; font-weight: bold;">🗡️ Boss HP: ${gameState.bossHP}/${gameState.bossMaxHP}</div>
+        <div class="summary-line" style="color: #10b981;">✓ Soal yang sudah benar: ${gameState.correctSoal.length} soal</div>
         <div class="summary-line">✓ Boss dikalahkan: ${gameState.bossDefeated.length} / 10</div>
         ${gameState.currentBoss === 9 ? '<div class="summary-line" style="color: #ef4444; font-weight: bold;">⚠️ PERSIAPKAN DIRI UNTUK PERTARUNGAN FINAL!</div>' : ''}
       </div>
@@ -2915,10 +2955,13 @@ function showBattlePartialDamage(correct, wrong) {
       <div class="summary-line" style="color: #60a5fa; font-weight: bold;">💚 HP Tersisa: ${remainingHealth}/${gameState.playerMaxHP}</div>
       ${remainingHealth <= Math.ceil(gameState.playerMaxHP * 0.3) ? '<div class="summary-line" style="color: #ef4444; font-weight: bold;">⚠️ HATI-HATI! HP KRITIS!</div>' : ''}
     </div>
-    <button class="btn btn-submit" onclick="nextBossRound()">
-      ⚔️ Lanjut Pertarungan
+    <button class="btn-analisis" onclick="showAnalisisRonde()">
+      📋 Lihat Analisis Jawaban Ronde Ini
     </button>
-    <button class="btn" onclick="location.reload()" style="margin-left: 10px;">🏠 Kembali Ke Menu</button>
+    <div style="display:flex; gap:10px; justify-content:center; flex-wrap:wrap; margin-top:10px;">
+      <button class="btn btn-submit" onclick="nextBossRound()">⚔️ Lanjut Pertarungan</button>
+      <button class="btn" onclick="location.reload()">🏠 Kembali Ke Menu</button>
+    </div>
   </div>
   `;
   
@@ -3026,6 +3069,56 @@ function updateBossHP() {
   const percentage = (gameState.bossHP / gameState.bossMaxHP) * 100;
   document.getElementById('bossHPBar').style.width = percentage + '%';
   document.getElementById('bossHPText').innerText = `${gameState.bossHP}/${gameState.bossMaxHP}`;
+}
+
+
+
+// ===== SHOW ANALISIS RONDE =====
+function showAnalisisRonde() {
+  if (!gameState.currentBattleResult) {
+    alert('Data analisis tidak tersedia');
+    return;
+  }
+  
+  const soalList = gameState.currentBattleResult.soal;
+  const answers = gameState.currentBattleResult.answers;
+  let html = '';
+
+  soalList.forEach((soal, i) => {
+    const userAnswer = answers[i];
+    const correctAnswer = soal.answer;
+    const isCorrect = userAnswer === correctAnswer;
+
+    // Build options
+    let optionsHtml = '';
+    soal.options.forEach(opt => {
+      const optLetter = opt.charAt(0);
+      let cls = 'analisis-option';
+      if (optLetter === correctAnswer) cls += ' opt-correct';
+      else if (optLetter === userAnswer && !isCorrect) cls += ' opt-wrong-pick';
+      optionsHtml += `<div class="${cls}">${opt}</div>`;
+    });
+
+    const verdictClass = isCorrect ? 'v-correct' : 'v-wrong';
+    const verdictIcon = isCorrect ? '✅' : '❌';
+    const verdictText = isCorrect
+      ? `Jawaban Anda (${userAnswer}) — BENAR`
+      : `Jawaban Anda: ${userAnswer || '(tidak dijawab)'} — SALAH | Jawaban Benar: ${correctAnswer}`;
+
+    html += `
+      <div class="analisis-item ${isCorrect ? 'correct-item' : 'wrong-item'}">
+        <div class="analisis-soal-no">Soal No. ${soal.soalNo}</div>
+        <div class="analisis-question">${soal.question}</div>
+        <div class="analisis-options">${optionsHtml}</div>
+        <div class="analisis-verdict ${verdictClass}">${verdictIcon} ${verdictText}</div>
+        <div class="analisis-text-label">💡 Analisis & Pembahasan</div>
+        <div class="analisis-text">${soal.analysis || 'Tidak ada analisis tersedia.'}</div>
+      </div>
+    `;
+  });
+
+  document.getElementById('analisisBody').innerHTML = html;
+  document.getElementById('analisisModal').classList.add('open');
 }
 
 // ===== ON LOAD =====
