@@ -405,6 +405,132 @@ h1 { text-align: center; color: #60a5fa; font-size: 2.5em; text-shadow: 0 0 20px
   font-size: 0.78em;
   margin-left: 4px;
 }
+
+/* ===== ANALISIS MODAL ===== */
+.analisis-modal {
+  display: none;
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(0,0,0,0.85);
+  z-index: 1000;
+  overflow-y: auto;
+  padding: 20px;
+}
+.analisis-modal.open { display: block; }
+.analisis-container {
+  max-width: 800px;
+  margin: 20px auto;
+  background: #1e293b;
+  border-radius: 16px;
+  border: 2px solid #7c3aed;
+  overflow: hidden;
+}
+.analisis-header {
+  background: linear-gradient(135deg, #7c3aed, #a855f7);
+  padding: 20px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.analisis-header h2 { margin: 0; color: white; font-size: 1.3em; }
+.analisis-close {
+  background: rgba(255,255,255,0.2);
+  border: none;
+  color: white;
+  font-size: 1.5em;
+  width: 36px; height: 36px;
+  border-radius: 50%;
+  cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  transition: background 0.2s;
+}
+.analisis-close:hover { background: rgba(255,255,255,0.4); }
+.analisis-body { padding: 20px; max-height: 80vh; overflow-y: auto; }
+.analisis-item {
+  background: #0f172a;
+  border-radius: 12px;
+  padding: 18px;
+  margin-bottom: 15px;
+  border-left: 4px solid #475569;
+}
+.analisis-item.correct-item { border-left-color: #10b981; }
+.analisis-item.wrong-item { border-left-color: #ef4444; }
+.analisis-soal-no {
+  font-size: 0.8em;
+  color: #94a3b8;
+  margin-bottom: 8px;
+  font-weight: bold;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+.analisis-question {
+  color: #e2e8f0;
+  font-size: 0.95em;
+  line-height: 1.6;
+  margin-bottom: 14px;
+}
+.analisis-options { margin-bottom: 12px; }
+.analisis-option {
+  padding: 8px 12px;
+  border-radius: 6px;
+  margin-bottom: 5px;
+  font-size: 0.88em;
+  color: #94a3b8;
+  background: #1e293b;
+}
+.analisis-option.opt-correct {
+  background: #064e3b;
+  color: #6ee7b7;
+  font-weight: bold;
+  border: 1px solid #10b981;
+}
+.analisis-option.opt-wrong-pick {
+  background: #450a0a;
+  color: #fca5a5;
+  border: 1px solid #ef4444;
+  text-decoration: line-through;
+}
+.analisis-verdict {
+  display: flex; align-items: center; gap: 8px;
+  font-weight: bold; font-size: 0.9em;
+  margin-bottom: 10px;
+  padding: 8px 12px;
+  border-radius: 6px;
+}
+.analisis-verdict.v-correct { background: #064e3b; color: #6ee7b7; }
+.analisis-verdict.v-wrong { background: #450a0a; color: #fca5a5; }
+.analisis-text {
+  background: #1e293b;
+  border-radius: 8px;
+  padding: 12px 14px;
+  color: #cbd5e1;
+  font-size: 0.88em;
+  line-height: 1.7;
+  border-left: 3px solid #7c3aed;
+}
+.analisis-text-label {
+  color: #a78bfa;
+  font-weight: bold;
+  font-size: 0.8em;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: 6px;
+}
+.btn-analisis {
+  background: linear-gradient(135deg, #0ea5e9, #0284c7);
+  padding: 14px 30px;
+  border: none;
+  border-radius: 10px;
+  color: white;
+  cursor: pointer;
+  font-size: 16px;
+  font-weight: bold;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 15px rgba(14, 165, 233, 0.3);
+  margin: 10px;
+  display: inline-block;
+}
+.btn-analisis:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(14, 165, 233, 0.5); }
 </style>
 </head>
 <body>
@@ -607,7 +733,7 @@ h1 { text-align: center; color: #60a5fa; font-size: 2.5em; text-shadow: 0 0 20px
   <!-- BOSS PROGRESSION -->
   <div style="margin-bottom: 30px;">
     <button id="startTryOutBtn" class="btn btn-submit" onclick="startBoss()" style="width: 100%; padding: 18px; font-size: 1.2em; background: linear-gradient(135deg, #7c3aed, #a855f7); border: 2px solid #a855f7; display: none; margin-bottom: 20px;">
-      ⚔️ MULAI MENGERJAKAN SOAL
+      ⚔️ SERANG BOSS!
     </button>
     <div class="boss-list" id="bossList"></div>
   </div>
@@ -618,7 +744,7 @@ h1 { text-align: center; color: #60a5fa; font-size: 2.5em; text-shadow: 0 0 20px
     <div class="boss-description" id="bossArenaDesc">Klik soal pertama untuk memulai pertarungan!</div>
     <div class="battle-status" id="battleStatus"></div>
     <button id="startBossBtn" class="btn btn-submit" onclick="startBoss()" style="width: 100%; padding: 15px; font-size: 1.1em; margin-top: 20px; display: none;">
-      ⚔️ MULAI TRY OUT
+      ⚔️ SERANG BOSS!
     </button>
   </div>
 
@@ -2465,7 +2591,7 @@ function renderBossList() {
     const status = isCompleted ? 'completed' : (isActive ? 'active' : '');
     
     html += `
-      <div class="boss-item ${status}" onclick="loadBoss(${i})">
+      <div class="boss-item ${status}" onclick="selectBoss(${i})">
         <div style="font-size: 2em;">${boss.icon}</div>
         <div class="boss-number" style="font-size:0.7em; font-weight:bold;">${boss.name}</div>
         <div class="boss-name" style="font-size:0.65em; color:#94a3b8;">${isCompleted ? '✅ Selesai' : boss.soalCount + ' soal'}</div>
@@ -2499,39 +2625,47 @@ function renderBossList() {
   document.getElementById('bossList').innerHTML = html;
 }
 
+
+// ===== SELECT BOSS (show button) =====
+function selectBoss(bossIndex) {
+  loadBoss(bossIndex);
+  // Scroll to button
+  setTimeout(() => {
+    const btn = document.getElementById('startBossBtn');
+    if (btn && btn.style.display !== 'none') {
+      btn.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+  }, 100);
+}
+
 // ===== LOAD BOSS =====
 function loadBoss(bossIndex) {
   if (bossIndex >= BOSSES.length) {
-    // Load Final Boss
     gameState.isFinalBoss = true;
-    gameState.bossMaxHP = FINAL_BOSS.difficulty * 50;
-    gameState.bossHP = gameState.bossMaxHP;
-    gameState.questionsPerBoss = FINAL_BOSS.questions;
-    renderBossList();
     loadFinalBoss();
     return;
   }
-  
+
   const boss = BOSSES[bossIndex];
   gameState.currentBoss = bossIndex;
   gameState.isFinalBoss = false;
-  gameState.bossMaxHP = (bossIndex + 1) * 100;
-  gameState.bossHP = gameState.bossMaxHP;
-  gameState.questionsPerBoss = 10;
+  gameState.bossMaxHP = 0; // Will be set in loadBossSoal
+  gameState.questionsPerBoss = boss.soalCount;
   gameState.playerLevel = bossIndex + 1;
   gameState.questionsAnswered = 0;
   gameState.questionsCorrect = 0;
-  
+
   updatePlayerHP();
   updateBossHP();
-  
-  const title = `${boss.icon} ${boss.name}`;
+
+  // Update boss info display
   const bossPool = allSoal.filter(s => boss.categories.includes(s.category || 'Umum'));
   const remaining = bossPool.filter(s => !gameState.correctSoal.includes(s.soalNo)).length;
-  const desc = `<strong style="color:#f59e0b">${boss.desc}</strong><br><span style="color:#94a3b8; font-size:0.9em">Soal belum dikerjakan: ${remaining}/${boss.soalCount}</span>`;
-  
-  document.getElementById('bossArenaTitle').innerHTML = title;
-  document.getElementById('bossArenaDesc').innerHTML = desc;
+
+  document.getElementById('bossArenaTitle').innerHTML = `${boss.icon} ${boss.name}`;
+  document.getElementById('bossArenaDesc').innerHTML =
+    `<strong style="color:#f59e0b">${boss.desc}</strong><br>
+     <span style="color:#94a3b8; font-size:0.9em">Total: ${bossPool.length} soal | Belum dijawab: ${remaining}</span>`;
   document.getElementById('bossName').innerHTML = `${boss.icon} ${boss.name}`;
   document.getElementById('bossLevel').innerHTML = boss.difficulty;
   document.getElementById('playerName').innerHTML = CLASSES[gameState.class].name;
@@ -2539,19 +2673,13 @@ function loadBoss(bossIndex) {
   document.getElementById('difficultyLabel').innerHTML = CLASSES[gameState.class].difficulty;
   document.getElementById('maxMistakes').innerHTML = gameState.playerMaxHP;
   document.getElementById('playerLevel').innerHTML = gameState.playerLevel;
-  
-  // Show START button at top, hide questions
-  console.log('🎮 loadBoss: Menampilkan tombol START...');
-  const btn = document.getElementById('startTryOutBtn');
-  if (btn) {
-    btn.style.display = 'block';
-    console.log('✅ Button START ditampilkan');
-  } else {
-    console.error('❌ Button START tidak ditemukan!');
-  }
-  document.getElementById('startBossBtn').style.display = 'none';
+
+  // Tampilkan tombol SERANG di dalam boss arena
+  document.getElementById('startBossBtn').style.display = 'block';
+  document.getElementById('startTryOutBtn').style.display = 'none';
+  // Bersihkan soal sebelumnya
   document.getElementById('questionContainer').innerHTML = '';
-  
+
   renderBossList();
 }
 
@@ -2603,48 +2731,48 @@ function startBoss() {
 // ===== LOAD BOSS SOAL =====
 function loadBossSoal() {
   if (typeof allSoal === 'undefined' || !Array.isArray(allSoal) || allSoal.length === 0) {
-    alert('❌ Error: Soal belum ter-load');
+    alert('❌ Error: Soal belum ter-load! Silakan refresh halaman.');
     return;
   }
-  
-  // Ambil 10 soal random dari soal yang telah difilter
-  const soalPool = getFilteredSoal();
-  if (soalPool.length < 5) {
-    alert('⚠️ Soal di kategori ini kurang dari 5. Silakan pilih kategori lain atau Semua.');
+
+  // Ambil soal berdasarkan kategori boss saat ini
+  let pool = [];
+  const bossIdx = gameState.currentBoss;
+
+  if (gameState.isFinalBoss) {
+    // Final boss: semua soal
+    pool = [...allSoal];
+  } else if (bossIdx >= 0 && bossIdx < BOSSES.length && BOSSES[bossIdx] && BOSSES[bossIdx].categories) {
+    // Boss reguler: filter berdasarkan kategori boss
+    const cats = BOSSES[bossIdx].categories;
+    pool = allSoal.filter(s => cats.includes(s.category || 'Umum'));
+  } else {
+    pool = [...allSoal];
+  }
+
+  if (pool.length === 0) {
+    alert('⚠️ Tidak ada soal untuk kategori ini!');
     return;
   }
-  
-  // Filter by boss category jika sedang di boss tertentu
-  let bossFilteredPool = soalPool;
-  if (!gameState.isFinalBoss && gameState.currentBoss >= 0 && gameState.currentBoss < BOSSES.length) {
-    const bossCategories = BOSSES[gameState.currentBoss].categories;
-    bossFilteredPool = allSoal.filter(s => bossCategories.includes(s.category || 'Umum'));
-    if (bossFilteredPool.length === 0) bossFilteredPool = soalPool;
-  }
-  
-  // Filter: hapus soal yang sudah dijawab benar sebelumnya (per boss)
-  const availableSoal = bossFilteredPool.filter(s => !gameState.correctSoal.includes(s.soalNo));
-  
-  // Jika semua soal sudah dijawab benar, reset list
-  let finalSoalPool = availableSoal;
-  if (availableSoal.length === 0) {
+
+  // Keluarkan soal yang sudah benar
+  let available = pool.filter(s => !gameState.correctSoal.includes(s.soalNo));
+  if (available.length === 0) {
+    // Semua sudah dijawab benar, reset
     gameState.correctSoal = [];
-    finalSoalPool = soalPool;
+    available = pool;
   }
-  
-  const shuffled = shuffleArray(finalSoalPool);
-  gameState.soal = shuffled.slice(0, Math.min(10, shuffled.length));
-  
-  // Set boss HP (awal pertarungan atau per ronde)
-  if (!gameState.bossMaxHP) {
-    gameState.bossMaxHP = gameState.soal.length; // Misal: 10 soal = 10 HP
-  }
-  gameState.bossHP = gameState.soal.length; // Reset HP per ronde
+
+  // Ambil SEMUA soal yang tersedia (tidak dibatasi 10)
+  gameState.soal = shuffleArray(available);
+  gameState.questionsPerBoss = gameState.soal.length;
+  gameState.bossMaxHP = gameState.soal.length;
+  gameState.bossHP = gameState.soal.length;
   gameState.currentQuestion = 0;
   gameState.answers = new Array(gameState.soal.length);
   gameState.allAnswered = false;
-  
-  startTimer(10);
+
+  startTimer(gameState.soal.length);
   renderQuestion();
 }
 
@@ -3083,6 +3211,12 @@ function updateBossHP() {
 
 
 
+
+
+function closeAnalisis() {
+  document.getElementById('analisisModal').classList.remove('open');
+}
+
 // ===== SHOW ANALISIS RONDE =====
 function showAnalisisRonde() {
   if (!gameState.currentBattleResult) {
@@ -3138,5 +3272,16 @@ window.addEventListener('load', () => {
 });
 </script>
 
+
+<!-- ANALISIS MODAL -->
+<div id="analisisModal" class="analisis-modal">
+  <div class="analisis-container">
+    <div class="analisis-header">
+      <h2>📋 Pembahasan Soal</h2>
+      <button class="analisis-close" onclick="closeAnalisis()">✕</button>
+    </div>
+    <div class="analisis-body" id="analisisBody"></div>
+  </div>
+</div>
 </body>
 </html>
