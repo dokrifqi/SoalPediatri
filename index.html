@@ -2607,11 +2607,10 @@ function renderBossList() {
   let html = '';
   BOSSES.forEach((boss, i) => {
     const isCompleted = gameState.bossDefeated.includes(i);
-    const isActive = gameState.currentBoss === i && !gameState.isFinalBoss;
-    const status = isCompleted ? 'completed' : (isActive ? 'active' : '');
-    const canClick = !isCompleted; // Bisa klik jika belum selesai
+    const status = isCompleted ? 'completed' : '';
+    // PENTING: Semua boss bisa diklik, tapi completed boss punya styling berbeda
     html += `
-      <div class="boss-item ${status}" onclick="${canClick ? 'pilihBoss(' + i + ')' : ''}" style="cursor:${canClick ? 'pointer' : 'not-allowed'};">
+      <div class="boss-item ${status}" onclick="pilihBoss(${i})" style="cursor:pointer;">
         <div style="font-size: 2em;">${boss.icon}</div>
         <div class="boss-number" style="font-size:0.7em; font-weight:bold;">${boss.name}</div>
         <div class="boss-name" style="font-size:0.65em; color:#94a3b8;">${isCompleted ? '✅ Selesai' : boss.soalCount + ' soal'}</div>
@@ -2694,8 +2693,11 @@ function pilihBoss(idx) {
   updatePlayerHP();
   updateBossHP();
   
-  // Buka boss arena untuk klik SERANG
-  document.getElementById('bossArena').style.display = 'block';
+  // Update display: hide boss list, show arena + button
+  const bossList = document.getElementById('bossList');
+  const bossArena = document.getElementById('bossArena');
+  if (bossList) bossList.style.display = 'none';
+  if (bossArena) bossArena.style.display = 'block';
   document.getElementById('questionContainer').innerHTML = '';
 }
 
@@ -3189,9 +3191,17 @@ function showBattleDefeatFinalBoss(correct, wrong) {
 // ===== NEXT BOSS STAGE =====
 function nextBossStage() {
   // Kembali ke boss list untuk pilih boss berikutnya
-  document.getElementById('bossArena').innerHTML = '';
   document.getElementById('questionContainer').innerHTML = '';
+  document.getElementById('startBossBtn').style.display = 'none';
+  document.getElementById('startTryOutBtn').style.display = 'none';
+  document.getElementById('bossArena').style.display = 'block';
+  
+  // Update boss list HTML
   renderBossList();
+  
+  // Show bossList if hidden
+  const bossList = document.getElementById('bossList');
+  if (bossList) bossList.style.display = 'block';
 }
 
 // ===== RELOAD BOSS =====
