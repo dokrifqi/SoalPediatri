@@ -2,8 +2,26 @@
 <html lang="id">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>PEDIATRI RPG MODE</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>Pediatri RPG Mode</title>
+
+<!-- PWA Meta Tags -->
+<meta name="application-name" content="Pediatri RPG">
+<meta name="description" content="Game Quiz RPG untuk persiapan ujian PPDS Pediatri">
+<meta name="theme-color" content="#7c3aed">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Pediatri RPG">
+
+<!-- PWA Manifest -->
+<link rel="manifest" href="/manifest.json">
+
+<!-- Apple Touch Icons -->
+<link rel="icon" type="image/x-icon" href="/favicon.ico">
+<link rel="apple-touch-icon" sizes="192x192" href="/icon-192.png">
+<link rel="apple-touch-icon" sizes="512x512" href="/icon-512.png">
+<link rel="icon" type="image/png" sizes="192x192" href="/icon-192.png">
 <style>
 * { box-sizing: border-box; }
 body {
@@ -2591,8 +2609,9 @@ function renderBossList() {
     const isCompleted = gameState.bossDefeated.includes(i);
     const isActive = gameState.currentBoss === i && !gameState.isFinalBoss;
     const status = isCompleted ? 'completed' : (isActive ? 'active' : '');
+    const canClick = !isCompleted; // Bisa klik jika belum selesai
     html += `
-      <div class="boss-item ${status}" onclick="pilihBoss(${i})" style="cursor:pointer;">
+      <div class="boss-item ${status}" onclick="${canClick ? 'pilihBoss(' + i + ')' : ''}" style="cursor:${canClick ? 'pointer' : 'not-allowed'};">
         <div style="font-size: 2em;">${boss.icon}</div>
         <div class="boss-number" style="font-size:0.7em; font-weight:bold;">${boss.name}</div>
         <div class="boss-name" style="font-size:0.65em; color:#94a3b8;">${isCompleted ? '✅ Selesai' : boss.soalCount + ' soal'}</div>
@@ -2674,7 +2693,10 @@ function pilihBoss(idx) {
 
   updatePlayerHP();
   updateBossHP();
-  renderBossList();
+  
+  // Buka boss arena untuk klik SERANG
+  document.getElementById('bossArena').style.display = 'block';
+  document.getElementById('questionContainer').innerHTML = '';
 }
 
 // ===== LOAD BOSS (alias, dipanggil saat init) =====
@@ -3059,7 +3081,7 @@ function showBattleVictory() {
         ${gameState.currentBoss === 9 ? '<div class="summary-line" style="color: #ef4444; font-weight: bold;">⚠️ PERSIAPKAN DIRI UNTUK PERTARUNGAN FINAL!</div>' : ''}
       </div>
       <button class="btn btn-submit" onclick="nextBossStage()">
-        ${nextBoss >= 10 ? '👑 Hadapi Pertarungan Final!' : '⚔️ Boss Berikutnya'}
+        ${nextBoss >= 10 ? '👑 Hadapi Pertarungan Final!' : '⬅️ Kembali ke Pilihan Boss'}
       </button>
     </div>
     `;
@@ -3166,7 +3188,10 @@ function showBattleDefeatFinalBoss(correct, wrong) {
 
 // ===== NEXT BOSS STAGE =====
 function nextBossStage() {
-  loadBoss(gameState.currentBoss + 1);
+  // Kembali ke boss list untuk pilih boss berikutnya
+  document.getElementById('bossArena').innerHTML = '';
+  document.getElementById('questionContainer').innerHTML = '';
+  renderBossList();
 }
 
 // ===== RELOAD BOSS =====
@@ -3285,5 +3310,73 @@ window.addEventListener('load', () => {
     <div class="analisis-body" id="analisisBody"></div>
   </div>
 </div>
+
+<!-- PWA Install Banner -->
+<div id="installBanner" style="display:none; position:fixed; bottom:0; left:0; right:0; background:linear-gradient(135deg,#7c3aed,#4f46e5); color:white; padding:16px 20px; z-index:9999; box-shadow:0 -4px 20px rgba(0,0,0,0.5); align-items:center; justify-content:space-between; gap:12px;">
+  <div style="display:flex; align-items:center; gap:12px; flex:1;">
+    <span style="font-size:2em;">🎮</span>
+    <div>
+      <div style="font-weight:bold; font-size:1em;">Install Pediatri RPG</div>
+      <div style="font-size:0.8em; opacity:0.85;">Tambahkan ke layar utama HP kamu!</div>
+    </div>
+  </div>
+  <div style="display:flex; gap:8px;">
+    <button onclick="installPWA()" style="background:white; color:#7c3aed; border:none; border-radius:8px; padding:10px 18px; font-weight:bold; cursor:pointer; font-size:0.9em;">
+      📲 Install
+    </button>
+    <button onclick="document.getElementById('installBanner').style.display='none'" style="background:rgba(255,255,255,0.15); color:white; border:none; border-radius:8px; padding:10px 14px; cursor:pointer; font-size:0.9em;">
+      ✕
+    </button>
+  </div>
+</div>
+
+<script>
+// ===== PWA SERVICE WORKER =====
+let deferredPrompt = null;
+
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', function() {
+    navigator.serviceWorker.register('/sw.js')
+      .then(function(reg) {
+        console.log('✅ Service Worker registered:', reg.scope);
+      })
+      .catch(function(err) {
+        console.log('⚠️ SW registration failed:', err);
+      });
+  });
+}
+
+// Tangkap event install
+window.addEventListener('beforeinstallprompt', function(e) {
+  e.preventDefault();
+  deferredPrompt = e;
+  // Tampilkan banner install setelah 3 detik
+  setTimeout(function() {
+    const banner = document.getElementById('installBanner');
+    if (banner) banner.style.display = 'flex';
+  }, 3000);
+});
+
+function installPWA() {
+  const banner = document.getElementById('installBanner');
+  if (banner) banner.style.display = 'none';
+  if (deferredPrompt) {
+    deferredPrompt.prompt();
+    deferredPrompt.userChoice.then(function(result) {
+      console.log('PWA install choice:', result.outcome);
+      deferredPrompt = null;
+    });
+  }
+}
+
+// Sembunyikan banner jika sudah install
+window.addEventListener('appinstalled', function() {
+  const banner = document.getElementById('installBanner');
+  if (banner) banner.style.display = 'none';
+  deferredPrompt = null;
+  console.log('✅ PWA installed!');
+});
+</script>
+
 </body>
 </html>
