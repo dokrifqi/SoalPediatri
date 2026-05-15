@@ -3065,6 +3065,9 @@ function showBattleVictory() {
   } else {
     const bossName = BOSSES[gameState.currentBoss].name;
     const nextBoss = gameState.currentBoss + 1;
+    const correct = gameState.soal.filter(function(s, idx) {
+      return gameState.answers[idx] === s.answer;
+    }).length;
     
     gameState.bossDefeated.push(gameState.currentBoss);
     
@@ -3072,7 +3075,7 @@ function showBattleVictory() {
     <div class="boss-arena">
       <div class="victory-animation">🎉</div>
       <h2 style="color: #10b981; font-size: 2em;">BOSS DIKALAHKAN!</h2>
-      <div class="score-display" style="color: #10b981;">10 / 10 Benar!</div>
+      <div class="score-display" style="color: #10b981;">${correct} / ${gameState.soal.length} Benar!</div>
       <div class="battle-summary">
         <div class="summary-line">✓ Kategori: ${bossName} ${BOSSES[gameState.currentBoss].icon}</div>
         <div class="summary-line" style="color:#10b981;">✓ Boss dikalahkan!</div>
@@ -3082,14 +3085,23 @@ function showBattleVictory() {
         <div class="summary-line">✓ Boss dikalahkan: ${gameState.bossDefeated.length} / 10</div>
         ${gameState.currentBoss === 9 ? '<div class="summary-line" style="color: #ef4444; font-weight: bold;">⚠️ PERSIAPKAN DIRI UNTUK PERTARUNGAN FINAL!</div>' : ''}
       </div>
-      <button class="btn btn-submit" onclick="nextBossStage()">
-        ${nextBoss >= 10 ? '👑 Hadapi Pertarungan Final!' : '⬅️ Kembali ke Pilihan Boss'}
+      <div style="margin-top: 30px; padding-top: 20px; border-top: 2px solid #475569;">
+        <p style="color: #cbd5e1; font-weight: bold; margin-bottom: 15px; text-align: center;">📋 Pilih Boss Berikutnya:</p>
+        <div id="nextBossSelection" style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; max-height: 300px; overflow-y: auto;"></div>
+      </div>
+      <button class="btn btn-submit" onclick="nextBossStage()" style="margin-top: 20px; width: 100%;">
+        ${nextBoss >= 10 ? '👑 Hadapi Pertarungan Final!' : '↺ Lihat Semua Boss'}
       </button>
     </div>
     `;
     
     document.getElementById('bossArena').innerHTML = html;
     document.getElementById('questionContainer').innerHTML = '';
+    
+    // Render boss selection cards
+    setTimeout(function() {
+      renderBossSelectionCards();
+    }, 100);
   }
 }
 
@@ -3190,13 +3202,12 @@ function showBattleDefeatFinalBoss(correct, wrong) {
 
 // ===== NEXT BOSS STAGE =====
 function nextBossStage() {
-  // Kembali ke boss list untuk pilih boss berikutnya
+  // Clear victory + pilihan boss, kembali ke boss list
   document.getElementById('questionContainer').innerHTML = '';
   document.getElementById('startBossBtn').style.display = 'none';
   document.getElementById('startTryOutBtn').style.display = 'none';
-  document.getElementById('bossArena').style.display = 'block';
   
-  // Update boss list HTML
+  // Update boss list
   renderBossList();
   
   // Show bossList if hidden
