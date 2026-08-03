@@ -1,51 +1,75 @@
-const CACHE_NAME = 'pediatri-rpg-v1';
-const ASSETS = [
-  '/',
-  '/index.html',
-  '/manifest.json'
+// Service Worker - Notulensi PPDS IKA
+// Strategi: NETWORK-FIRST untuk index.html supaya versi terbaru selalu
+// diambil dari server begitu ada koneksi internet. Cache hanya dipakai
+// sebagai fallback saat offline.
+
+const CACHE_NAME = 'notulensi-ppds-ika-v2';
+const OFFLINE_URLS = [
+  './index.html', './manifest.json', './icon-192.png', './icon-512.png',
+  './img/abyalis-1.jpg', './img/abyalis-2.jpg', './img/abyalis-3.jpg', './img/abyalis-4.jpg',
+  './img/jaga-list-tulisan-tangan.jpg', './img/jaga-list-pasien-flamboyan9.jpg', './img/jaga-grup-pasien-baru-wa.jpg',
 ];
 
-// Install: cache semua asset
-self.addEventListener('install', function(event) {
-  event.waitUntil(
-    caches.open(CACHE_NAME).then(function(cache) {
-      return cache.addAll(ASSETS);
-    })
-  );
+// Install: cache aset dasar, langsung aktif tanpa menunggu tab lama ditutup
+self.addEventListener('install', (event) => {
   self.skipWaiting();
-});
-
-// Activate: hapus cache lama
-self.addEventListener('activate', function(event) {
   event.waitUntil(
-    caches.keys().then(function(keys) {
-      return Promise.all(
-        keys.filter(function(key) { return key !== CACHE_NAME; })
-            .map(function(key) { return caches.delete(key); })
-      );
-    })
+    caches.open(CACHE_NAME).then((cache) => cache.addAll(OFFLINE_URLS))
   );
-  self.clients.claim();
 });
 
-// Fetch: serve dari cache dulu, fallback ke network
-self.addEventListener('fetch', function(event) {
+// Activate: hapus cache versi lama, ambil alih kontrol semua tab yang terbuka
+self.addEventListener('activate', (event) => {
+  event.waitUntil(
+    caches.keys().then((keys) =>
+      Promise.all(
+        keys.filter((k) => k !== CACHE_NAME).map((k) => caches.delete(k))
+      )
+    ).then(() => self.clients.claim())
+  );
+});
+
+// Fetch: NETWORK-FIRST untuk navigasi/HTML (auto-update), CACHE-FIRST untuk aset statis
+self.addEventListener('fetch', (event) => {
+  const req = event.request;
+
+  // Hanya tangani GET request
+  if (req.method !== 'GET') return;
+
+  const isHTML = req.mode === 'navigate' || (req.headers.get('accept') || '').includes('text/html');
+
+  if (isHTML) {
+    // Network-first: selalu coba ambil versi terbaru dari server dulu
+    event.respondWith(
+      fetch(req, { cache: 'no-store' })
+        .then((res) => {
+          const resClone = res.clone();
+          caches.open(CACHE_NAME).then((cache) => cache.put(req, resClone));
+          return res;
+        })
+        .catch(() => caches.match(req).then((cached) => cached || caches.match('./index.html')))
+    );
+    return;
+  }
+
+  // Aset lain (icon, manifest): cache-first, update cache di background
   event.respondWith(
-    caches.match(event.request).then(function(cached) {
-      if (cached) return cached;
-      return fetch(event.request).then(function(response) {
-        // Cache response baru
-        if (response && response.status === 200 && response.type === 'basic') {
-          const clone = response.clone();
-          caches.open(CACHE_NAME).then(function(cache) {
-            cache.put(event.request, clone);
-          });
-        }
-        return response;
-      }).catch(function() {
-        // Offline fallback ke index.html
-        return caches.match('/index.html');
-      });
+    caches.match(req).then((cached) => {
+      const fetchPromise = fetch(req)
+        .then((res) => {
+          const resClone = res.clone();
+          caches.open(CACHE_NAME).then((cache) => cache.put(req, resClone));
+          return res;
+        })
+        .catch(() => cached);
+      return cached || fetchPromise;
     })
   );
+});
+
+// Terima pesan dari halaman (misalnya trigger skipWaiting manual jika diperlukan)
+self.addEventListener('message', (event) => {
+  if (event.data === 'SKIP_WAITING') {
+    self.skipWaiting();
+  }
 });

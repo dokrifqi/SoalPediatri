@@ -1,35 +1,37 @@
 {
-  "name": "Pediatri RPG Mode",
-  "short_name": "Pediatri RPG",
-  "description": "Game Quiz RPG untuk persiapan ujian PPDS Pediatri",
-  "start_url": "/",
+  "name": "Notulensi PPDS IKA - Angkatan Pak Hilal",
+  "short_name": "Notulensi IKA",
+  "description": "Checklist, notulensi, IR, dan referensi PNPK untuk PPDS IKA UNS",
+  "start_url": "./index.html",
+  "scope": "./",
   "display": "standalone",
-  "background_color": "#0f172a",
-  "theme_color": "#7c3aed",
-  "orientation": "portrait",
-  "lang": "id",
+  "orientation": "portrait-primary",
+  "background_color": "#FAF7F2",
+  "theme_color": "#7B2D3E",
   "icons": [
     {
       "src": "icon-192.png",
       "sizes": "192x192",
       "type": "image/png",
-      "purpose": "any maskable"
+      "purpose": "any"
+    },
+    {
+      "src": "icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "maskable"
     },
     {
       "src": "icon-512.png",
       "sizes": "512x512",
       "type": "image/png",
-      "purpose": "any maskable"
-    }
-  ],
-  "screenshots": [
+      "purpose": "any"
+    },
     {
       "src": "icon-512.png",
       "sizes": "512x512",
       "type": "image/png",
-      "form_factor": "narrow"
+      "purpose": "maskable"
     }
-  ],
-  "categories": ["education", "games"],
-  "prefer_related_applications": false
+  ]
 }
